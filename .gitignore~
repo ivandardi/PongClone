@@ -1,6 +1,4 @@
 # Misc
-bin/
-obj/
 *.cbp
 *.layout
 *.depend
