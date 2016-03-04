@@ -4,7 +4,8 @@
 #include "Gameplay.h"
 
 MainMenu::MainMenu()
-	: _selection(0)
+	: _font()
+	, _selection(0)
 	, _knob({_sizeKnob, _sizeKnob})
 {
 	if (!_font.loadFromFile("assets/mplus-1m-bold.ttf")) {

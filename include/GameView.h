@@ -9,6 +9,8 @@ public:
 	virtual void update(void) = 0;
 	virtual void render(void) = 0;
 
+	virtual ~GameView() {};
+
 	static sf::RenderWindow _window;
 	static std::unique_ptr<GameView> _gameview;
 };

@@ -4,9 +4,15 @@
 #include "Paddle.h"
 
 #include <iostream>
+#include <chrono>
+
+#define TORAD(x) ((x)*3.14159265/180.0)
 
 Ball::Ball()
-	: _square({_radius, _radius})
+	: _rgn(std::chrono::high_resolution_clock::now().time_since_epoch().count())
+	, _square({_radius, _radius})
+	, _velocity()
+	, _clock()
 {
 	_square.setOrigin(_radius/2, _radius/2);
 	restart();
@@ -14,35 +20,43 @@ Ball::Ball()
 
 void Ball::restart(void)
 {
-	_velocity = sf::Vector2f(0, 0);
-	_square.setPosition((Game::width + 1)/2, (Game::height + 1)/2);
+	std::bernoulli_distribution bern;
+	auto signal = [&](){ return (bern(_rgn) ? 1 : -1); };
+
+	std::uniform_int_distribution<int> launchAngle(10, 40);
+	float angle = TORAD(launchAngle(_rgn));
+	_velocity = sf::Vector2f(std::cos(angle) * signal(), std::sin(angle) * signal()) * _speed ;
+
+	std::uniform_int_distribution<int> startingY((Game::height + 1)/4, (Game::height + 1)*3/4);
+	_square.setPosition((Game::width + 1)/2, startingY(_rgn));
+
+	launched = false;
 }
 
 void Ball::launch(void)
 {
-	std::uniform_real_distribution<float> dist(-35, 35);
-	std::bernoulli_distribution bern;
-	float speed = 800;
-	//float angle = dist(rgn);
-	float angle = 1.0;
-	if (bern(rgn)) {
-		angle += 180;
-	}
-	_velocity = sf::Vector2f(std::cos(angle), std::sin(angle)) * speed;
-	std::cerr << std::cos(angle) << ":" << std::sin(angle) << "\n";
+	launched = true;
 }
 
-void Ball::collidesWithPaddle(const Paddle& paddle)
+// TODO: Implement proper boucing off
+bool Ball::collidesWithPaddle(const sf::RectangleShape& paddle)
 {
-	if (_square.getGlobalBounds().intersects(paddle.getBounds())) {
-		_velocity.x *= -1;
+	if (_square.getGlobalBounds().intersects(paddle.getGlobalBounds())) {
+		auto paddleOrigin = paddle.getOrigin();
+		auto ballOrigin = _square.getOrigin();
+        float m = (paddleOrigin.y - ballOrigin.y)/(paddleOrigin.x - ballOrigin.x);
+		std::cout << m << '\n';
+
+        _velocity.x *= -1;
+		return true;
 	}
+	return false;
 }
 
 void Ball::collideswithWall(void)
 {
 	auto box = _square.getGlobalBounds();
-	if (0 <= box.top || box.top + box.height >= Game::height) {
+	if (0 >= box.top || box.top + box.height >= Game::height) {
 		_velocity.y *= -1;
 	}
 }
@@ -50,6 +64,20 @@ void Ball::collideswithWall(void)
 void Ball::updatePosition(void)
 {
 	_square.move(_velocity);
+}
+
+int Ball::predictY(void) const
+{
+	float m = _velocity.y/_velocity.x;
+	int predictedY = std::abs(m * -_square.getPosition().x + _square.getPosition().y);
+	int reflections = predictedY / Game::height;
+	predictedY = (reflections % 2 == 0 ? predictedY % Game::height : Game::height - (predictedY % Game::height));
+	return predictedY;
+}
+
+float Ball::getX(void) const
+{
+	return _square.getPosition().x;
 }
 
 Edge::Side Ball::isOffscreen(void) const

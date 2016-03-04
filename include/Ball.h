@@ -17,7 +17,8 @@ enum Side {
 class Ball : public sf::Drawable, public sf::Transformable {
 private:
 	const float _radius{25};
-	std::mt19937 rgn;
+	const float _speed{20};
+	std::mt19937 _rgn;
 	sf::RectangleShape _square;
 	sf::Vector2f _velocity;
 	sf::Clock _clock;
@@ -29,13 +30,15 @@ public:
 	 */
 	void restart(void);
 	void launch(void);
-	void collidesWithPaddle(const Paddle& paddle);
+	bool collidesWithPaddle(const sf::RectangleShape& paddle);
 	void collideswithWall(void);
 	void updatePosition(void);
+	int predictY(void) const;
+	float getX(void) const;
 	Edge::Side isOffscreen(void) const;
 	void draw(sf::RenderTarget& target, sf::RenderStates states) const override;
 
-	bool readyToLaunch{true};
+	bool launched{false};
 };
 
 #endif // BALL_H

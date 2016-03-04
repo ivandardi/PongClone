@@ -1,12 +1,15 @@
 #include "Paddle.h"
 
 #include "Game.h"
+#include "Ball.h"
 
 const int Paddle::WIDTH  {40};
 const int Paddle::HEIGHT {Game::height/5};
 
 Paddle::Paddle(float posX, float posY)
-	: _score({std::to_string(_points), _font, 50})
+	: _points(0)
+	, _font()
+	, _score(std::to_string(_points), _font, 50)
 	, _rect({WIDTH, HEIGHT})
 {
 	if (!_font.loadFromFile("assets/mplus-1m-bold.ttf")) {
@@ -28,20 +31,23 @@ Paddle::Paddle(float posX, float posY)
 	}
 }
 
-void Paddle::setY(float newY)
+void Paddle::moveDown(float multiplier)
 {
-	_rect.setPosition(_rect.getPosition().x, newY);
+	int padding = 15;
+	auto box = _rect.getGlobalBounds();
+	float maxY = Game::height - padding;
+	if (box.top + box.height < maxY) {
+		_rect.move(0, _speed * multiplier);
+	}
 }
 
-void Paddle::increaseY(float incrY)
+void Paddle::moveUp(float multiplier)
 {
-	auto pos = _rect.getPosition();
-	pos.y += incrY;
-
-	auto box = _rect.getGlobalBounds();
 	int padding = 15;
-	if (padding <= box.top && box.top + box.height <= Game::height) {
-		_rect.setPosition(pos);
+	auto box = _rect.getGlobalBounds();
+	float minY = 0 + padding;
+	if (box.top > minY) {
+		_rect.move(0, -_speed * multiplier);
 	}
 }
 
@@ -55,12 +61,34 @@ int Paddle::getScore(void) const
 	return _points;
 }
 
-void Paddle::updateAI(const Ball& ball)
+void Paddle::AIUpdate(float y)
 {
+	_predictedBallY = y;
+}
+
+// TODO: Fix jitter
+void Paddle::AIMove(float x)
+{
+	int rectY = _rect.getPosition().y;
+	// Paddle only follows ball on the left half of the screen
+	if (x < Game::width/2 + 1) {
+		if (_predictedBallY > rectY) {
+			moveDown(.75);
+		} else if (_predictedBallY < rectY) {
+			moveUp(.75);
+		}
+	} else {
+		// Paddles goes to the middle of the screen
+		if (rectY < Game::height/2) {
+			moveDown(0.25);
+		} else if (rectY > Game::height/2) {
+			moveUp(0.25);
+		}
+	}
 }
 
 void Paddle::draw(sf::RenderTarget& target, sf::RenderStates states) const
 {
-	target.draw(_score);
-	target.draw(_rect);
+	target.draw(_rect, states);
+	target.draw(_score, states);
 }

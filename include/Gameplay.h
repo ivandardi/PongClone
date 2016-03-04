@@ -3,6 +3,7 @@
 
 #include "GameView.h"
 
+#include "DashedLine.h"
 #include "Paddle.h"
 #include "Ball.h"
 
@@ -16,11 +17,11 @@ private:
 	Paddle _computer;
 	Ball _ball;
 
+	// The divisor array for the screen
+	const DashedLine _divisor;
+
 	// The winner indicator. -1 is no winner, 0 is player winner and 1 is comp
 	int _winner = -1;
-
-	// The divisor array for the screen
-	std::array<sf::VertexArray, 31> _divisor;
 
 public:
 	Gameplay();
