@@ -3,15 +3,19 @@
 
 #include <SFML/Graphics.hpp>
 
+enum class Direction {
+	Horizontal,
+	Vertical
+};
+
 class DashedLine : public sf::Drawable, public sf::Transformable {
 private:
-	std::vector<sf::VertexArray> _lines;
-	float _lineFunction(float x);
-	sf::Vector2f _begin;
-	sf::Vector2f _end;
+	const Direction _direction;
+	const int _position;
 	const unsigned long _quantity;
+	std::vector<sf::VertexArray> _lines;
 public:
-	DashedLine(sf::Vector2f bgn, sf::Vector2f end, unsigned long quantity);
+	DashedLine(Direction direction, int position, unsigned long quantity);
 	void draw(sf::RenderTarget& target, sf::RenderStates states) const override;
 };
 

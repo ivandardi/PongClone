@@ -16,9 +16,9 @@ enum Side {
 
 class Ball : public sf::Drawable, public sf::Transformable {
 private:
-	const float _radius{25};
-	const float _speed{20};
-	std::mt19937 _rgn;
+	const float _radius;
+	const float _speed;
+	int _hits;
 	sf::RectangleShape _square;
 	sf::Vector2f _velocity;
 	sf::Clock _clock;

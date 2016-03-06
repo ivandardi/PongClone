@@ -2,15 +2,19 @@
 
 #include "Game.h"
 #include "Ball.h"
+#include "Util.h"
 
 const int Paddle::WIDTH  {40};
 const int Paddle::HEIGHT {Game::height/5};
 
-Paddle::Paddle(float posX, float posY)
-	: _points(0)
+Paddle::Paddle(float posX)
+	: _speed(300)
+	, _points(0)
 	, _font()
 	, _score(std::to_string(_points), _font, 50)
 	, _rect({WIDTH, HEIGHT})
+	, _clock()
+	, isMoving(false)
 {
 	if (!_font.loadFromFile("assets/mplus-1m-bold.ttf")) {
 		throw std::runtime_error("Failed to load font.");
@@ -20,7 +24,8 @@ Paddle::Paddle(float posX, float posY)
 	_rect.setOrigin(WIDTH/2, HEIGHT/2);
 
 	// Setting the actual positions of the paddles
-	_rect.setPosition(posX, posY);
+	_rect.setPosition(posX, 0);
+	resetY();
 
 	// Setting the score position
 	constexpr float halfScreen = (Game::width + 1)/2;
@@ -33,21 +38,33 @@ Paddle::Paddle(float posX, float posY)
 
 void Paddle::moveDown(float multiplier)
 {
+	if (!isMoving) {
+		_clock.restart();
+		isMoving = true;
+	}
+
 	int padding = 15;
 	auto box = _rect.getGlobalBounds();
 	float maxY = Game::height - padding;
+	float delta = _clock.restart().asSeconds();
 	if (box.top + box.height < maxY) {
-		_rect.move(0, _speed * multiplier);
+		_rect.move(0, _speed * multiplier * delta);
 	}
 }
 
 void Paddle::moveUp(float multiplier)
 {
+	if (!isMoving) {
+		_clock.restart();
+		isMoving = true;
+	}
+
 	int padding = 15;
 	auto box = _rect.getGlobalBounds();
 	float minY = 0 + padding;
+	float delta = _clock.restart().asSeconds();
 	if (box.top > minY) {
-		_rect.move(0, -_speed * multiplier);
+		_rect.move(0, -_speed * multiplier * delta);
 	}
 }
 
@@ -61,28 +78,39 @@ int Paddle::getScore(void) const
 	return _points;
 }
 
+void Paddle::resetY()
+{
+	_rect.setPosition(_rect.getPosition().x, Game::height/2);
+}
+
 void Paddle::AIUpdate(float y)
 {
 	_predictedBallY = y;
 }
 
-// TODO: Fix jitter
 void Paddle::AIMove(float x)
 {
-	int rectY = _rect.getPosition().y;
+	float padding = 20;
+	float topY = _rect.getGlobalBounds().top + padding;
+	float bottomY = _rect.getGlobalBounds().top + _rect.getGlobalBounds().height - padding;
+
 	// Paddle only follows ball on the left half of the screen
-	if (x < Game::width/2 + 1) {
-		if (_predictedBallY > rectY) {
-			moveDown(.75);
-		} else if (_predictedBallY < rectY) {
-			moveUp(.75);
+	if (x < Game::width/2) {
+		if (bottomY < _predictedBallY) {
+			moveDown();
+		} else if (topY > _predictedBallY) {
+			moveUp();
+		} else {
+			isMoving = false;
 		}
 	} else {
-		// Paddles goes to the middle of the screen
-		if (rectY < Game::height/2) {
-			moveDown(0.25);
-		} else if (rectY > Game::height/2) {
-			moveUp(0.25);
+		// Paddles goes to the general middle of the screen
+		if (bottomY < Game::height/2) {
+			moveDown(0.3);
+		} else if (topY > Game::height/2) {
+			moveUp(0.3);
+		} else {
+			isMoving = false;
 		}
 	}
 }

@@ -4,7 +4,6 @@
 Game::Game()
 {
 	GameView::_window.create(sf::VideoMode(width, height), title, style, sf::ContextSettings(0, 0, 4));
-	GameView::_window.setFramerateLimit(30);
 	GameView::_gameview.reset(new MainMenu);
 }
 
