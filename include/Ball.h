@@ -5,14 +5,11 @@
 
 class Paddle;
 
-namespace Edge
-{
-enum Side {
+enum class Side {
 	None,
 	Right,
 	Left
 };
-}
 
 class Ball : public sf::Drawable, public sf::Transformable {
 private:
@@ -35,7 +32,7 @@ public:
 	void updatePosition(void);
 	int predictY(void) const;
 	float getX(void) const;
-	Edge::Side isOffscreen(void) const;
+	Side isOffscreen(void) const;
 	void draw(sf::RenderTarget& target, sf::RenderStates states) const override;
 
 	bool launched{false};

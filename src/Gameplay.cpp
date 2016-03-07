@@ -52,8 +52,10 @@ void Gameplay::update(void)
 		return;
 	}
 
+	// Move the computer paddle with AI
 	_computer.AIMove(_ball.getX());
 
+	// Check for ball collisions
 	if (_ball.collidesWithPaddle(_player.getPaddle())) {
 		_computer.AIUpdate(_ball.predictY());
 	} else {
@@ -61,11 +63,12 @@ void Gameplay::update(void)
 	}
 	_ball.collideswithWall();
 
+	// After collisions are calculated, move the ball
 	_ball.updatePosition();
 
-	// Checks to see if a new round should begin
-	if (_ball.isOffscreen() != Edge::None) {
-		_ball.isOffscreen() == Edge::Left ? _player.increaseScore() : _computer.increaseScore();
+	// Check to see if ball is offscreen and award points accordingly
+	if (_ball.isOffscreen() != Side::None) {
+		_ball.isOffscreen() == Side::Left ? _player.increaseScore() : _computer.increaseScore();
 		_ball.restart();
 		_player.resetY();
 		_computer.resetY();
@@ -81,17 +84,12 @@ void Gameplay::render(void)
 	_window.draw(_player);
 	_window.draw(_computer);
 
-	if (_winner == 0) {
+	if (_winner != -1) {
 		// If player won
-		sf::Text winner("You won!", _font, 75);
-		winner.setOrigin(winner.getGlobalBounds().width/2, 0);
-		winner.setPosition((Game::width + 1)*3/4, (Game::height + 1)/4 - winner.getGlobalBounds().height);
-		_window.draw(winner);
-	} else if (_winner == 1) {
-		// If computer won
-		sf::Text winner("You lost!", _font, 70);
-		winner.setOrigin(winner.getGlobalBounds().width/2, 0);
-		winner.setPosition((Game::width + 1)/4, (Game::height + 1)/4 - winner.getGlobalBounds().height);
+		sf::Text winner("", _font, 75);
+		std::string result{(_winner == 1 ? "Lost" : "Won")};
+		winner.setString("You " + result + "!");
+		winner.setPosition(Game::width/2 - winner.getGlobalBounds().width/2, Game::height/4 - winner.getGlobalBounds().height);
 		_window.draw(winner);
 	} else {
 		// If nobody won yet

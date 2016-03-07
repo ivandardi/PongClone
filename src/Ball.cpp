@@ -6,7 +6,11 @@
 
 #include <iostream>
 
-#define TORAD(x) ((x)*3.14159265/180.0)
+#define PI 3.14159265
+#define TORAD(x) ((x)*PI/180.0)
+
+#define MINANG TORAD(15)
+#define MAXANG TORAD(35)
 
 Ball::Ball()
 	: _radius(25)
@@ -22,10 +26,10 @@ Ball::Ball()
 
 void Ball::restart(void)
 {
-	float angle = TORAD(Util::getRandomInt(10, 40));
-	_velocity = sf::Vector2f(std::cos(angle) * Util::getRandomSignal(), std::sin(angle) * Util::getRandomSignal()) * _speed ;
+	float angle = Util::getRandomFloat(MINANG, MAXANG);
+	_velocity = sf::Vector2f(std::cos(angle) * Util::getRandomSignal(), std::sin(angle) * Util::getRandomSignal()) * _speed;
 
-	_square.setPosition((Game::width + 1)/2, Util::getRandomFloat((Game::height + 1)/4.0, (Game::height + 1)*3/4.0));
+	_square.setPosition(Game::width/2, Util::getRandomFloat(Game::height/4.0, Game::height*3/4.0));
 
 	launched = false;
 }
@@ -36,54 +40,52 @@ void Ball::launch(void)
 	_clock.restart();
 }
 
-// TODO: Implement proper boucing off
+// TODO: Fix bounce angle
 bool Ball::collidesWithPaddle(const sf::RectangleShape& paddle)
 {
-	if (!_square.getGlobalBounds().intersects(paddle.getGlobalBounds())) {
+	sf::FloatRect paddleBounds {paddle.getGlobalBounds()};
+	sf::FloatRect ballBounds  {_square.getGlobalBounds()};
+
+	if (!paddleBounds.intersects(ballBounds)) {
 		return false;
 	}
-	auto paddleBounds {paddle.getGlobalBounds()};
-	auto ballBounds  {_square.getGlobalBounds()};
 
-	sf::Vector2f paddleOrigin((paddleBounds.top + paddleBounds.width)/2, (paddleBounds.top + paddleBounds.height)/2);
-	sf::Vector2f ballOrigin((ballBounds.top + ballBounds.width)/2, (ballBounds.top + ballBounds.height)/2);
+	sf::Vector2f paddleOrigin((paddleBounds.left + paddleBounds.width)/2, (paddleBounds.top + paddleBounds.height)/2);
+	sf::Vector2f ballOrigin((ballBounds.left + ballBounds.width)/2, (ballBounds.top + ballBounds.height)/2);
 
 	// Creating the new velocity
 	sf::Vector2f newVelocity(ballOrigin.x - paddleOrigin.x, ballOrigin.y - paddleOrigin.y);
-	std::cout << "New velocity 1: (" << newVelocity.x << "," << newVelocity.y << ")\n";
 
 	// Setting the angle between 10 and 40 degrees
 	if (newVelocity.x > 0) {
 		// East quadrant
 		if (newVelocity.y > 0) {
 			// South quadrant
-			newVelocity.y = std::max(newVelocity.y, static_cast<float>(std::tan(TORAD(10))) * newVelocity.x);
-			newVelocity.y = std::min(newVelocity.y, static_cast<float>(std::tan(TORAD(40))) * newVelocity.x);
+			newVelocity.y = std::max(newVelocity.y, static_cast<float>(std::tan(MINANG)) * newVelocity.x);
+			newVelocity.y = std::min(newVelocity.y, static_cast<float>(std::tan(MAXANG)) * newVelocity.x);
 		} else {
 			// North quadrant
-			newVelocity.y = std::min(newVelocity.y, static_cast<float>(std::tan(TORAD(360 - 10))) * newVelocity.x);
-			newVelocity.y = std::max(newVelocity.y, static_cast<float>(std::tan(TORAD(360 - 40))) * newVelocity.x);
+			newVelocity.y = std::min(newVelocity.y, static_cast<float>(std::tan(-MINANG)) * newVelocity.x);
+			newVelocity.y = std::max(newVelocity.y, static_cast<float>(std::tan(-MAXANG)) * newVelocity.x);
 		}
 	} else {
 		// West quadrant
 		if (newVelocity.y > 0) {
 			// South quadrant
-			newVelocity.y = std::max(newVelocity.y, static_cast<float>(std::tan(TORAD(180 - 10))) * newVelocity.x);
-			newVelocity.y = std::min(newVelocity.y, static_cast<float>(std::tan(TORAD(180 - 40))) * newVelocity.x);
+			newVelocity.y = std::max(newVelocity.y, static_cast<float>(std::tan(PI - MINANG)) * newVelocity.x);
+			newVelocity.y = std::min(newVelocity.y, static_cast<float>(std::tan(PI - MAXANG)) * newVelocity.x);
 		} else {
 			// North quadrant
-			newVelocity.y = std::min(newVelocity.y, static_cast<float>(std::tan(TORAD(180 + 10))) * newVelocity.x);
-			newVelocity.y = std::max(newVelocity.y, static_cast<float>(std::tan(TORAD(180 + 40))) * newVelocity.x);
+			newVelocity.y = std::min(newVelocity.y, static_cast<float>(std::tan(PI + MINANG)) * newVelocity.x);
+			newVelocity.y = std::max(newVelocity.y, static_cast<float>(std::tan(PI + MAXANG)) * newVelocity.x);
 		}
 	}
 
 	// Making it with size one by dividing it by its modulus
 	newVelocity /= static_cast<float>(std::sqrt(std::pow(newVelocity.x, 2) + std::pow(newVelocity.y, 2)));
-	std::cout << "New velocity 2: (" << newVelocity.x << "," << newVelocity.y << ")\n";
 
 	// Now that the vector has size one, multiply it with the speed
 	newVelocity *= _speed;
-	std::cout << "New velocity 3: (" << newVelocity.x << "," << newVelocity.y << ")\n";
 
 	// Set the new velocity
 	_velocity = newVelocity;
@@ -126,16 +128,16 @@ float Ball::getX(void) const
 	return _square.getPosition().x;
 }
 
-Edge::Side Ball::isOffscreen(void) const
+Side Ball::isOffscreen(void) const
 {
-	auto pos = _square.getPosition();
-	if (pos.x + _radius/2 < 0) {
-		return Edge::Left;
+	auto pos = _square.getGlobalBounds();
+	if (pos.left + pos.width < 0) {
+		return Side::Left;
 	}
-	if (pos.x - _radius/2 > Game::width) {
-		return Edge::Right;
+	if (pos.left > Game::width) {
+		return Side::Right;
 	}
-	return Edge::None;
+	return Side::None;
 }
 
 void Ball::draw(sf::RenderTarget& target, sf::RenderStates states) const

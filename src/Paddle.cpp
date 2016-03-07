@@ -90,9 +90,10 @@ void Paddle::AIUpdate(float y)
 
 void Paddle::AIMove(float x)
 {
-	float padding = 20;
-	float topY = _rect.getGlobalBounds().top + padding;
-	float bottomY = _rect.getGlobalBounds().top + _rect.getGlobalBounds().height - padding;
+	// Set up a random region of collision each time
+	float topY = _rect.getGlobalBounds().top;
+	topY += Util::getRandomInt(0, _rect.getGlobalBounds().height/2);
+	float bottomY = topY + _rect.getGlobalBounds().height/2;
 
 	// Paddle only follows ball on the left half of the screen
 	if (x < Game::width/2) {

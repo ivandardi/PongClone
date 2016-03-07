@@ -4,6 +4,7 @@
 Game::Game()
 {
 	GameView::_window.create(sf::VideoMode(width, height), title, style, sf::ContextSettings(0, 0, 4));
+	GameView::_window.setMouseCursorVisible(false);
 	GameView::_gameview.reset(new MainMenu);
 }
 
