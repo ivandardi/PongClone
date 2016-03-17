@@ -1,3 +1,4 @@
+# really stupid parameter parsing
 if [[ "$1" == "release" ]]; then
 	BUILD_TYPE=Release
 else
@@ -18,9 +19,14 @@ cd build/$BUILD_TYPE
 cmake -DCMAKE_BUILD_TYPE=$BUILD_TYPE ../..
 make
 
+# making sure that the bin folder exists
 cd ../..
 if [[ ! -d bin/"$BUILD_TYPE" ]]; then
 	mkdir -p bin/$BUILD_TYPE
 fi
 
-mv -v -u build/${BUILD_TYPE}/PongClone bin/${BUILD_TYPE}
+# copy all the necessary assets to the executable folder
+cp -rfuv ./assets bin/$BUILD_TYPE
+
+# move the compiled binary to the bin folder
+mv -vu build/${BUILD_TYPE}/PongClone bin/${BUILD_TYPE}

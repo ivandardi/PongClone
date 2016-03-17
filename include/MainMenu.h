@@ -1,29 +1,51 @@
 #ifndef MAINMENU_H
 #define MAINMENU_H
 
+////////////////////////////////////////////////////////////
+// Headers
+////////////////////////////////////////////////////////////
 #include <GameView.h>
 
+////////////////////////////////////////////////////////////
+/// \brief Main Menu gameview
+///
+////////////////////////////////////////////////////////////
 class MainMenu : public GameView {
-private:
-	// Font for array of text, holding all the text in the screen
-	sf::Font _font;
-	sf::Text _text[3];
-
-	// Menu selection
-    unsigned _selection:1;
-
-    // Flag to tell if we should rerender the selection knob
-    bool _updateSelection{false};
-
-    // The selection knob
-    const float _sizeKnob{15};
-    sf::RectangleShape _knob;
 
 public:
-	MainMenu();
-	void input (void) override;
-	void update(void) override;
-	void render(void) override;
+
+    ////////////////////////////////////////////////////////////
+    /// \brief Explicit main menu constructor
+    ///
+    ////////////////////////////////////////////////////////////
+    explicit MainMenu();
+
+    ////////////////////////////////////////////////////////////
+    /// \brief Overriden user input function
+    ///
+    ////////////////////////////////////////////////////////////
+    void  input() override;
+
+    ////////////////////////////////////////////////////////////
+    /// \brief Overriden update function
+    ///
+    ////////////////////////////////////////////////////////////
+    void update() override;
+
+    ////////////////////////////////////////////////////////////
+    /// \brief Overriden rendering function
+    ///
+    ////////////////////////////////////////////////////////////
+    void render() override;
+
+private:
+    const float        _sizeKnob;        ///< Side of the selection knob
+    sf::RectangleShape _knob;            ///< The selection knob
+    int                _selection;       ///< Menu selection
+    bool               _updateSelection; ///< Flag to tell if we should update the selection knob
+    sf::Font           _font;            ///< Font for the text
+    sf::Text           _text[3];         ///< All the text rendered in the screen
+
 };
 
 #endif // MAINMENU_H

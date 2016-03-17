@@ -1,41 +1,118 @@
 #ifndef BALL_H
 #define BALL_H
 
-#include <SFML/Graphics.hpp>
+////////////////////////////////////////////////////////////
+// Headers
+////////////////////////////////////////////////////////////
+#include "Entity.h"
+
 
 class Paddle;
 
+////////////////////////////////////////////////////////////
+/// \brief Enum class used to determined which side of the screen the ball left
+///
+////////////////////////////////////////////////////////////
 enum class Side {
-	None,
-	Right,
-	Left
+    None,
+    Right,
+    Left
 };
 
-class Ball : public sf::Drawable, public sf::Transformable {
-private:
-	const float _radius;
-	const float _speed;
-	int _hits;
-	sf::RectangleShape _square;
-	sf::Vector2f _velocity;
-	sf::Clock _clock;
+
+////////////////////////////////////////////////////////////
+/// \brief Ball class
+///
+////////////////////////////////////////////////////////////
+class Ball : public Entity {
 
 public:
-	Ball();
-	/**
-	 Sets the ball position at the starting position and launches it.
-	 */
-	void restart(void);
-	void launch(void);
-	bool collidesWithPaddle(const sf::RectangleShape& paddle);
-	void collideswithWall(void);
-	void updatePosition(void);
-	int predictY(void) const;
-	float getX(void) const;
-	Side isOffscreen(void) const;
-	void draw(sf::RenderTarget& target, sf::RenderStates states) const override;
 
-	bool launched{false};
+    ////////////////////////////////////////////////////////////
+    /// \brief Ball constructor
+    ///
+    ////////////////////////////////////////////////////////////
+    explicit Ball();
+
+    ////////////////////////////////////////////////////////////
+    /// \brief Sets the ball at the starting position and resets its speed
+    ///
+    ////////////////////////////////////////////////////////////
+    void restart();
+
+    ////////////////////////////////////////////////////////////
+    /// \brief Launvhes the ball
+    ///
+    ////////////////////////////////////////////////////////////
+    void launch();
+
+    ////////////////////////////////////////////////////////////
+    /// \brief Checks for collision with the paddle
+    ///
+    /// \param paddle The paddle
+    /// \return Returns true if there's a collision
+    ///
+    ////////////////////////////////////////////////////////////
+    bool collidesWithPaddle(const Paddle& paddle);
+
+    ////////////////////////////////////////////////////////////
+    /// \brief Checks collision with the walls
+    ///
+    ////////////////////////////////////////////////////////////
+    void collideswithWall();
+
+    ////////////////////////////////////////////////////////////
+    /// \brief Moves the ball
+    ///
+    ////////////////////////////////////////////////////////////
+    void updatePosition();
+
+    ////////////////////////////////////////////////////////////
+    /// \brief Predicts where the ball will hit so that the paddle AI knows
+    ///        where to go
+    ///
+    /// \return The predicted ball Y
+    ///
+    ////////////////////////////////////////////////////////////
+    int predictY() const;
+
+    ////////////////////////////////////////////////////////////
+    /// \brief Checks if the ball is offscreen
+    ///
+    /// \return Side::None if the ball is still inside the screen,
+    ///         Side::Left if the ball left on the left side and
+    ///         Side::Right if the ball left on the right side
+    ///
+    ////////////////////////////////////////////////////////////
+    Side isOffscreen() const;
+
+    ////////////////////////////////////////////////////////////
+    /// \brief Tells if the ball is launched
+    ///
+    /// \return Returns true if the ball is launched
+    ///
+    ////////////////////////////////////////////////////////////
+    bool isLaunched() const;
+
+    ////////////////////////////////////////////////////////////
+    /// \brief Draw the shape to a render target
+    ///
+    /// \param target Render target to draw to
+    /// \param states Current render states
+    ///
+    ////////////////////////////////////////////////////////////
+    void draw(sf::RenderTarget& target, sf::RenderStates states) const override;
+
+private:
+
+    ////////////////////////////////////////////////////////////
+    // Member data
+    ////////////////////////////////////////////////////////////
+    sf::Vector2f _velocity; ///< Directional velocity of the ball
+    float        _speed;    ///< Speed of the ball in pixels/second
+    bool         _launched; ///< Launch state
+    int          _hits;     ///< Amount of paddle hits
+
 };
 
 #endif // BALL_H

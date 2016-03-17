@@ -1,4 +1,8 @@
 #include "GameView.h"
 
-sf::RenderWindow GameView::_window;
-std::unique_ptr<GameView> GameView::_gameview{nullptr};
+////////////////////////////////////////////////////////////
+sf::RenderWindow GameView::Window;
+
+
+////////////////////////////////////////////////////////////
+std::unique_ptr<GameView> GameView::Gameview{nullptr};

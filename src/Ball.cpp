@@ -1,147 +1,165 @@
+////////////////////////////////////////////////////////////
+// Headers
+////////////////////////////////////////////////////////////
 #include "Ball.h"
-
 #include "Game.h"
 #include "Paddle.h"
 #include "Util.h"
-
 #include <iostream>
 
-#define PI 3.14159265
-#define TORAD(x) ((x)*PI/180.0)
 
-#define MINANG TORAD(15)
-#define MAXANG TORAD(35)
+////////////////////////////////////////////////////////////
+// Constants
+////////////////////////////////////////////////////////////
+static constexpr double PI    {3.14159265};
+static constexpr float  MAXANG{48 * PI / 180.0};
 
+
+////////////////////////////////////////////////////////////
 Ball::Ball()
-	: _radius(25)
-	, _speed(500)
-	, _hits(0)
-	, _square({_radius, _radius})
-	, _velocity()
-	, _clock()
+    : Entity   (25, 25)
+    , _velocity()
+    , _speed   (500)
+    , _launched(false)
+    , _hits    (0)
 {
-	_square.setOrigin(_radius/2, _radius/2);
-	restart();
+    _rect.setOrigin(width()/2, height()/2);
+    restart();
 }
 
-void Ball::restart(void)
+
+////////////////////////////////////////////////////////////
+void Ball::restart()
 {
-	float angle = Util::getRandomFloat(MINANG, MAXANG);
-	_velocity = sf::Vector2f(std::cos(angle) * Util::getRandomSignal(), std::sin(angle) * Util::getRandomSignal()) * _speed;
+    _speed = 500;
 
-	_square.setPosition(Game::width/2, Util::getRandomFloat(Game::height/4.0, Game::height*3/4.0));
+    float angle = Util::getRandomFloat(0, MAXANG);
+    _velocity = sf::Vector2f(std::cos(angle) * Util::getRandomSignal() * _speed,
+                             std::sin(angle) * Util::getRandomSignal() * _speed);
 
-	launched = false;
+    _rect.setPosition(Game::width/2, Util::getRandomFloat(Game::height/4.0, Game::height*3/4.0));
+
+    _launched = false;
 }
 
-void Ball::launch(void)
+
+////////////////////////////////////////////////////////////
+void Ball::launch()
 {
-	launched = true;
-	_clock.restart();
+    _launched = true;
+    _clock.restart();
 }
 
-// TODO: Fix bounce angle
-bool Ball::collidesWithPaddle(const sf::RectangleShape& paddle)
+
+////////////////////////////////////////////////////////////
+bool Ball::collidesWithPaddle(const Paddle& paddle)
 {
-	sf::FloatRect paddleBounds {paddle.getGlobalBounds()};
-	sf::FloatRect ballBounds  {_square.getGlobalBounds()};
+    sf::FloatRect paddleBounds {paddle.getBoundingBox()};
+    sf::FloatRect ballBounds   {getBoundingBox()};
 
-	if (!paddleBounds.intersects(ballBounds)) {
-		return false;
-	}
+    if (!paddleBounds.intersects(ballBounds)) {
+        return false;
+    }
 
-	sf::Vector2f paddleOrigin((paddleBounds.left + paddleBounds.width)/2, (paddleBounds.top + paddleBounds.height)/2);
-	sf::Vector2f ballOrigin((ballBounds.left + ballBounds.width)/2, (ballBounds.top + ballBounds.height)/2);
+    // Creating the new velocity
+    sf::Vector2f newVelocity{center().x - paddle.center().x, center().y - paddle.center().y};
 
-	// Creating the new velocity
-	sf::Vector2f newVelocity(ballOrigin.x - paddleOrigin.x, ballOrigin.y - paddleOrigin.y);
+    // Setting the angle between 0 and MAXANG degrees
+    if (newVelocity.x > 0) {
+        // East quadrant
+        if (newVelocity.y > 0) {
+            // South quadrant
+            newVelocity.y = std::min(newVelocity.y, static_cast<float>(std::tan(MAXANG)) * newVelocity.x);
+        } else {
+            // North quadrant
+            newVelocity.y = std::max(newVelocity.y, static_cast<float>(std::tan(-MAXANG)) * newVelocity.x);
+        }
+    } else {
+        // West quadrant
+        if (newVelocity.y > 0) {
+            // South quadrant
+            newVelocity.y = std::min(newVelocity.y, static_cast<float>(std::tan(PI - MAXANG)) * newVelocity.x);
+        } else {
+            // North quadrant
+            newVelocity.y = std::max(newVelocity.y, static_cast<float>(std::tan(PI + MAXANG)) * newVelocity.x);
+        }
+    }
 
-	// Setting the angle between 10 and 40 degrees
-	if (newVelocity.x > 0) {
-		// East quadrant
-		if (newVelocity.y > 0) {
-			// South quadrant
-			newVelocity.y = std::max(newVelocity.y, static_cast<float>(std::tan(MINANG)) * newVelocity.x);
-			newVelocity.y = std::min(newVelocity.y, static_cast<float>(std::tan(MAXANG)) * newVelocity.x);
-		} else {
-			// North quadrant
-			newVelocity.y = std::min(newVelocity.y, static_cast<float>(std::tan(-MINANG)) * newVelocity.x);
-			newVelocity.y = std::max(newVelocity.y, static_cast<float>(std::tan(-MAXANG)) * newVelocity.x);
-		}
-	} else {
-		// West quadrant
-		if (newVelocity.y > 0) {
-			// South quadrant
-			newVelocity.y = std::max(newVelocity.y, static_cast<float>(std::tan(PI - MINANG)) * newVelocity.x);
-			newVelocity.y = std::min(newVelocity.y, static_cast<float>(std::tan(PI - MAXANG)) * newVelocity.x);
-		} else {
-			// North quadrant
-			newVelocity.y = std::min(newVelocity.y, static_cast<float>(std::tan(PI + MINANG)) * newVelocity.x);
-			newVelocity.y = std::max(newVelocity.y, static_cast<float>(std::tan(PI + MAXANG)) * newVelocity.x);
-		}
-	}
+    // Making it with size one by dividing it by its modulus
+    newVelocity /= static_cast<float>(std::sqrt(std::pow(newVelocity.x, 2) + std::pow(newVelocity.y, 2)));
 
-	// Making it with size one by dividing it by its modulus
-	newVelocity /= static_cast<float>(std::sqrt(std::pow(newVelocity.x, 2) + std::pow(newVelocity.y, 2)));
+    // For every 5 hits, make the ball go a little bit faster
+    if (++_hits > 5) {
+        _speed *= 1.1f;
+        _hits = 0;
+    }
 
-	// Now that the vector has size one, multiply it with the speed
-	newVelocity *= _speed;
+    // Now that the vector has size one, multiply it with the speed
+    newVelocity *= _speed;
 
-	// Set the new velocity
-	_velocity = newVelocity;
+    // Set the new velocity
+    _velocity = newVelocity;
 
-	// For every 5 hits, make the ball go a little bit faster
-	++_hits;
-	if (_hits == 5) {
-		_velocity *= 1.1f;
-		_hits = 0;
-		//std::cout << "Increased velocity: (" << _velocity.x << "," << _velocity.y << ")\n";
-	}
-	return true;
+    return true;
 }
 
-void Ball::collideswithWall(void)
+
+////////////////////////////////////////////////////////////
+void Ball::collideswithWall()
 {
-	auto box = _square.getGlobalBounds();
-	if (0 >= box.top || box.top + box.height >= Game::height) {
-		_velocity.y *= -1;
-	}
+    // The set positions prevent the ball from becoming stuck in the wall
+    if (0 >= top()) {
+        _rect.setPosition(center().x, height() / 2);
+        _velocity.y *= -1;
+    } else if(bottom() >= Game::height) {
+        _velocity.y *= -1;
+        _rect.setPosition(center().x, Game::height - height() / 2);
+    }
 }
 
-void Ball::updatePosition(void)
+
+////////////////////////////////////////////////////////////
+void Ball::updatePosition()
 {
-	float delta = _clock.restart().asSeconds();
-	_square.move(_velocity * delta);
+    float delta = _clock.restart().asSeconds();
+    _rect.move(_velocity * delta);
 }
 
-int Ball::predictY(void) const
+
+////////////////////////////////////////////////////////////
+int Ball::predictY() const
 {
-	float m = _velocity.y/_velocity.x;
-	int predictedY = std::abs(m * -_square.getPosition().x + _square.getPosition().y);
-	int reflections = predictedY / Game::height;
-	predictedY = (reflections % 2 == 0 ? predictedY % Game::height : Game::height - (predictedY % Game::height));
-	return predictedY;
+    float m = _velocity.y/_velocity.x;
+    int predictedY = std::abs(m * -center().x + center().y);
+    int reflections = predictedY / Game::height;
+    predictedY = (reflections % 2 == 0 ? predictedY % Game::height : Game::height - (predictedY % Game::height));
+    return predictedY;
 }
 
-float Ball::getX(void) const
+
+////////////////////////////////////////////////////////////
+Side Ball::isOffscreen() const
 {
-	return _square.getPosition().x;
+    auto pos = _rect.getGlobalBounds();
+    if (pos.left + pos.width < 0) {
+        return Side::Left;
+    }
+    if (pos.left > Game::width) {
+        return Side::Right;
+    }
+    return Side::None;
 }
 
-Side Ball::isOffscreen(void) const
+
+////////////////////////////////////////////////////////////
+bool Ball::isLaunched() const
 {
-	auto pos = _square.getGlobalBounds();
-	if (pos.left + pos.width < 0) {
-		return Side::Left;
-	}
-	if (pos.left > Game::width) {
-		return Side::Right;
-	}
-	return Side::None;
+    return _launched;
 }
 
+
+////////////////////////////////////////////////////////////
 void Ball::draw(sf::RenderTarget& target, sf::RenderStates states) const
 {
-	target.draw(_square, states);
+    target.draw(_rect, states);
 }
-
